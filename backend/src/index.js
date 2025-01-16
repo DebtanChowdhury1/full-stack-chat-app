@@ -7,13 +7,14 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import { app, server } from "./lib/socket.js";
 import path from "path";
+import { fileURLToPath } from 'url';
 
 // Load environment variables
 dotenv.config();
 
-
 const PORT = process.env.PORT || 3000;
-const __dirname = path.resolve();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Middleware
 app.use(express.json({ limit: '50mb' }));
@@ -23,11 +24,6 @@ app.use(cors({
   origin: process.env.CORS_ORIGIN || "http://localhost:5173",
   credentials: true
 }));
-
-// Root route
-app.get("/", (req, res) => {
-  res.send("Welcome to the API server!");
-});
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -39,11 +35,16 @@ app.use((err, req, res, next) => {
   res.status(500).send('Something broke!');
 });
 
+// Serve frontend in production
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+  app.use(express.static(path.join(__dirname, "../../frontend/dist")));
 
   app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
+    res.sendFile(path.join(__dirname, "../../frontend/dist/index.html"));
+  });
+} else {
+  app.get("/", (req, res) => {
+    res.send("Welcome to the API server!");
   });
 }
 
